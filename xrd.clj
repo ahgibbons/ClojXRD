@@ -26,8 +26,17 @@
     (if (zero? n') acc
         (recur (* x acc) (dec n')))))
 
+(defn Debye->SI [x]
+  (* x 3.33564e-30))
+
+(defn SI->Debye [x]
+  (/ x 3.33564e-30))
+
 (defn v-add [& vectors]
   (reduce (fn [v1 v2] (map + v1 v2)) vectors))
+
+(defn v-sub [v1 v2]
+  (map - v1 v2))
 
 (defn vec-mult [v a]
   (map #(* a %) v))
@@ -55,12 +64,25 @@
 (defn v-mag [x]
   (Math/sqrt (v-mag-sq x)))
 
+(defn v-dist [v1 v2]
+  (v-mag (v-sub v2 v1)))
+
+(defn v-angle [a b c]
+  (let [ba (v-sub a b)
+        bc (v-sub c b)
+        ba-mag (v-mag ba)
+        bc-mag (v-mag bc)]
+    (rad->deg (Math/acos (/ (v-dot ba bc) (* ba-mag bc-mag))))))
+
 (defn cartesian-prod [colls]
   (if (empty? colls)
     '(())
     (for [more (cartesian-prod (rest colls))
           x (first colls)]
       (cons x more))))
+
+(defn centre-of-geometry [atom-list]
+  (vec-div (reduce v-add atom-list) (count atom-list)))
 
 (defn volume [a1 a2 a3]
   (v-dot a1 (v-cross a2 a3)))
@@ -268,5 +290,21 @@
                  {:atom :Cl1- :x 0.0 :y 0.5 :z 0.0}
                  {:atom :Cl1- :x 0.5 :y 0.0 :z 0.0}
                  {:atom :Cl1- :x 0.5 :y 0.5 :z 0.5}]})
+
+;;; Test Chemicals and Test Systems
+
+(def O' [-4.09724 3.44893 0.00964])
+(def H1' [-3.12935 3.40827 -0.01278])
+(def H2' [-4.37609 2.63627 -0.43844])
+(def H2O' [H1' H2' O'])
+(def H2O-com (centre-of-geometry H2O'))
+
+(def O (v-sub O' H2O-com))
+(def H1 (v-sub H1' H2O-com))
+(def H2 (v-sub H2' H2O-com))
+(def H2O [H1 H2 O])
+
+(def H-O (v-dist O H1))
+(def OHO (v-angle H1 O H2))
 
 ; (defn XRD [lambda-xray unit-cell])
